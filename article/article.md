@@ -83,10 +83,9 @@ stack_importing_bucket = StackImportingBucket(
 app.synth()
 ```
 
-Its a simple CDK app with 2 stacks, where the 2nd one imports an S3 Bucket created by the first stack. It has the consequence that in cdk.out directory after running `cdk synth` we see that the 1st stack created an Output object and the 2nd stack is importing it:
+Its a simple CDK app with 2 stacks, where the 2nd one imports an S3 Bucket created by the first stack. It has the consequence that in cdk.out directory after running `cdk synth` we see that the 1st stack created an Output object and the 2nd stack is importing it (details in this [article](https://medium.com/qoob-dev/cdk-cloud-formation-do-not-follow-blindly-all-best-practices-c529464c8e9d)):
 
 
-[article](https://medium.com/qoob-dev/cdk-cloud-formation-do-not-follow-blindly-all-best-practices-c529464c8e9d)
 
 ```json
 {
