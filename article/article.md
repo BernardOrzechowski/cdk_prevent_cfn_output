@@ -5,7 +5,37 @@ AWS CDK has a set of [best practices](https://docs.aws.amazon.com/AWSCloudFormat
 
 The problem is that some of these best practices are questionable and based on my teams extensive experience with large CDK code base - there are better approaches for some. 
 
-I described in this article [CDK / Cloud Formation — do not follow blindly all best practices!]([https://](https://medium.com/qoob-dev/cdk-cloud-formation-do-not-follow-blindly-all-best-practices-c529464c8e9d)) how to avoid using cross stack references.
+I described in this article [CDK / Cloud Formation — do not follow blindly all best practices!](https://medium.com/qoob-dev/cdk-cloud-formation-do-not-follow-blindly-all-best-practices-c529464c8e9d) how to avoid using cross stack references.
+
+What we want to avoid is such an object in generated Cloud Formation template ("Outputs"):
+
+```json
+{
+ "Resources": {
+  "MyFirstBucketB8884501": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "VersioningConfiguration": {
+     "Status": "Enabled"
+    }
+   },
+ ....
+ "Outputs": {
+  "ExportsOutputRefMyFirstBucketB888450127863B6E": {
+   "Value": {
+    "Ref": "MyFirstBucketB8884501"
+   },
+   "Export": {
+    "Name": "StackWithBucketExport:ExportsOutputRefMyFirstBucketB888450127863B6E"
+   }
+  }
+ },
+```
+
+Why? Because:
+- as soon as it will be imported in other stack it will become a problem
+- it introduces the anti pattern of using cross stack dependencies instead of relying on AWS SSM Parameters.
+
 
 But the question is: Can you prevent it from happening? If many software developers are contributing to your CDK code, such cross tack reference may skip through code review and become a problem.
 
