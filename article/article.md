@@ -109,7 +109,74 @@ Currently the command `cdk synth` works. Lets see if we can prevent it.
 
 ## CDK Constructs tree
 
+https://docs.aws.amazon.com/cdk/v2/guide/apps.html#apps-tree
+
 ## CDK Native validation mechanism
+
+Now lets try the [CDK Construct IValidation](https://docs.aws.amazon.com/cdk/api/v2/python/constructs/IValidation.html) method. 
+
+We will create a `StackValidator` class that implements the `IValidation` protocol. After the section [CDK Constructs tree](#cdk-constructs-tree) we know that we are looking for the stack node child with ID "Exports".
+
+The code below checks for the existence of such a child node.
+
+```python
+
+import typing as t
+
+import aws_cdk as cdk
+import jsii
+from constructs import IConstruct, IValidation
+
+_STACK_CFN_OUTPUT_SECTION: t.Final[str] = "Exports"
+
+
+@jsii.implements(IValidation)
+class StackValidator:
+    def __init__(self, stack: cdk.Stack) -> None:
+        self.stack = stack
+
+    def validate(self) -> list[str]:
+        errors: list[str] = []
+        # For each stack child objects (can be e.g.the Exports section from constructs tree (tree.json))
+        # run the validation specific for checking if any Output was created
+        for child in self.stack.node.children:
+            error_messages = self.validate_cfn_output(child)
+            if error_messages:
+                errors.extend(error_messages)
+
+        return errors
+
+    def validate_cfn_output(self, stack_child_construct: IConstruct) -> list[str]:
+        errors: list[str] = []
+        print(
+            f"Validating construct {stack_child_construct.node.id} in stack {self.stack.node.id}"
+        )
+        if stack_child_construct.node.id == _STACK_CFN_OUTPUT_SECTION:
+            errors.append("CFN Output is not allowed in this stack.")
+
+        return errors
+
+```
+
+When we execute `cdk synth` the error we wanted to see is produced. `cdk synth` failed, exactly what we wanted to achieve:
+
+
+```python
+Validating construct MyFirstBucket in stack StackWithBucketExport
+Validating construct CDKMetadata in stack StackWithBucketExport
+Validating construct Exports in stack StackWithBucketExport
+Validating construct MyFirstBucket in stack StackImportingBucket
+Validating construct CDKMetadata in stack StackImportingBucket
+jsii.errors.JavaScriptError: 
+  @jsii/kernel.RuntimeError: Error: Validation failed with the following errors:
+    [StackWithBucketExport] CFN Output is not allowed in this stack.
+      at Kernel._Kernel_ensureSync (/tmp/tmpq91vo52y/lib/program.js:927:23)
+      at Kernel.invoke (/tmp/tmpq91vo52y/lib/program.js:294:102)
+      at KernelHost.processRequest (/tmp/tmpq91vo52y/lib/program.js:15467:36)
+      at KernelHost.run (/tmp/tmpq91vo52y/lib/program.js:15427:22)
+      at Immediate._onImmediate (/tmp/tmpq91vo52y/lib/program.js:15428:46)
+      at process.processImmediate (node:internal/timers:476:21)
+```
 
 ## Summary
 
