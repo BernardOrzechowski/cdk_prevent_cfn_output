@@ -1,6 +1,8 @@
 import aws_cdk as cdk
 import aws_cdk.aws_s3 as s3
 
+from stacks.cfn_output_validator import StackValidator
+
 
 class StackImportingBucket(cdk.Stack):
     def __init__(
@@ -14,3 +16,5 @@ class StackImportingBucket(cdk.Stack):
             bucket_name=f"{imported_bucket.bucket_name}_2",
             versioned=True,
         )
+
+        self.node.add_validation(StackValidator(stack=self))
