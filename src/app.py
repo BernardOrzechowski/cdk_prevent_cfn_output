@@ -1,33 +1,28 @@
-#!/usr/bin/env python3
 import os
 
 import aws_cdk as cdk
-from stacks.mix_of_services import VariousServicesExampleStack
-from stacks.storage import StorageStack
-
-# from hello_cdk.hello_cdk_stack import (
-#     StackImportingBucket,  # noqa: E501
-#     StackWithBucketExport,
-# )
+from stacks.stack_bucket_import import StackImportingBucket
+from stacks.stack_with_bucket import StackWithBucketExport
 
 app = cdk.App()
 
-env = cdk.Environment(
-    account=os.getenv("CDK_DEFAULT_ACCOUNT"),
-    region=os.getenv("CDK_DEFAULT_REGION"),
-)
-
-storage_stack = StorageStack(
+stack_with_bucket_export = StackWithBucketExport(
     app,
-    "StorageStack",
-    env=env,
+    "StackWithBucketExport",
+    env=cdk.Environment(
+        account=os.getenv("CDK_DEFAULT_ACCOUNT"),
+        region=os.getenv("CDK_DEFAULT_REGION"),
+    ),
 )
 
-example_services_stack = VariousServicesExampleStack(
+stack_importing_bucket = StackImportingBucket(
     app,
-    "VariousServicesExampleStack",
-    env=env,
+    "StackImportingBucket",
+    imported_bucket=stack_with_bucket_export.bucket,
+    env=cdk.Environment(
+        account=os.getenv("CDK_DEFAULT_ACCOUNT"),
+        region=os.getenv("CDK_DEFAULT_REGION"),
+    ),
 )
-
 
 app.synth()
