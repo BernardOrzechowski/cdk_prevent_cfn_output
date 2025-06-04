@@ -50,6 +50,64 @@ In the article below I will find answers to these questions:
 
 ## CDK Aspects to the rescue - or not?
 
+Our sample CDK app is available [here](https://github.com/BernardOrzechowski/cdk_prevent_cfn_output/blob/develop/src/app.py)
+
+```python
+import os
+
+import aws_cdk as cdk
+from stacks.stack_bucket_import import StackImportingBucket
+from stacks.stack_with_bucket import StackWithBucketExport
+
+app = cdk.App()
+
+stack_with_bucket_export = StackWithBucketExport(
+    app,
+    "StackWithBucketExport",
+    env=cdk.Environment(
+        account=os.getenv("CDK_DEFAULT_ACCOUNT"),
+        region=os.getenv("CDK_DEFAULT_REGION"),
+    ),
+)
+
+stack_importing_bucket = StackImportingBucket(
+    app,
+    "StackImportingBucket",
+    imported_bucket=stack_with_bucket_export.bucket,
+    env=cdk.Environment(
+        account=os.getenv("CDK_DEFAULT_ACCOUNT"),
+        region=os.getenv("CDK_DEFAULT_REGION"),
+    ),
+)
+
+app.synth()
+```
+
+Its a simple CDK app with 2 stacks, where the 2nd one imports an S3 Bucket created by the first stack. It has the consequence that in cdk.out directory after running `cdk synth` we see that the 1st stack created an Output object and the 2nd stack is importing it:
+
+
+[article](https://medium.com/qoob-dev/cdk-cloud-formation-do-not-follow-blindly-all-best-practices-c529464c8e9d)
+
+```json
+{
+ "Resources": {
+  "MyFirstBucketB8884501": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "BucketName": {
+     "Fn::Join": [
+      "",
+      [
+       {
+        "Fn::ImportValue": "StackWithBucketExport:ExportsOutputRefMyFirstBucketB888450127863B6E"
+       },
+       "_2"
+    ...
+...
+```
+
+Currently the command `cdk synth` works. Lets see if we can prevent it.
+
 ## CDK Constructs tree
 
 ## CDK Native validation mechanism
