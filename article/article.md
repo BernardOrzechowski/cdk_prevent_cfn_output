@@ -117,7 +117,7 @@ Now lets try the [CDK Construct IValidation](https://docs.aws.amazon.com/cdk/api
 
 We will create a `StackValidator` class that implements the `IValidation` protocol. After the section [CDK Constructs tree](#cdk-constructs-tree) we know that we are looking for the stack node child with ID "Exports".
 
-The code below checks for the existence of such a child node.
+The code below ([github repo link](https://github.com/BernardOrzechowski/cdk_prevent_cfn_output/blob/develop/src/stacks/cfn_output_validator.py)) checks for the existence of such a child node.
 
 ```python
 
