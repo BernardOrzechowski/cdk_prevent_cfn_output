@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "cdk_prevent_cfn_output"
+version = "0.1.0"
+description = ""
+authors = ["Bernard Orzechowski <bernard.orzechowski@gmail.com>"]
+readme = "README.md"
+packages = [{include = "stacks", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "3.10.13"
+aws-cdk-lib = "2.133.0"
+pydantic = "2.6.4"
+loguru = "^0.7.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
