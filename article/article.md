@@ -5,10 +5,10 @@ AWS CDK has a set of [best practices](https://docs.aws.amazon.com/AWSCloudFormat
 
 The problem is that some of these best practices are questionable and based on my teams extensive experience with large CDK code base - there are better approaches. 
 
-I described in this article [CDK / Cloud Formation — do not follow blindly all best practices!](https://medium.com/qoob-dev/cdk-cloud-formation-do-not-follow-blindly-all-best-practices-c529464c8e9d) how to avoid using cross stack references.
+I described in this article [CDK / Cloud Formation — do not follow blindly all best practices!](https://medium.com/qoob-dev/cdk-cloud-formation-do-not-follow-blindly-all-best-practices-c529464c8e9d) how to avoid using cross-stack references.
 
 You will encounter the situation where you need to use a resource (name or ARN or some other property) defined in other stack.
-The AWS recommended way is to use cross stack references implemented in Cloud Formation as `Outputs` section (generator side) and `Fn::ImportValue` section (receiver side). But there are huge disadvantages to this approach.
+The AWS recommended way is to use cross-stack references implemented in Cloud Formation as `Outputs` section (generator side) and `Fn::ImportValue` section (receiver side). But there are huge disadvantages to this approach.
 
 What we want to avoid is that such an object in generated Cloud Formation template (`Export` in `Outputs` section):
 
@@ -37,13 +37,13 @@ What we want to avoid is that such an object in generated Cloud Formation templa
 
 Why? Because:
 - as soon as it will be imported in other stack it will become a problem
-- it introduces the anti pattern of using cross stack dependencies instead of relying on AWS SSM Parameters.
+- it introduces the anti pattern of using cross-stack dependencies instead of relying on AWS SSM Parameters.
 
 
-**The question is**: Can we prevent it from happening? If many software developers are contributing to your CDK code, such cross stack reference may slip past code review and become a problem.
+**The question is**: Can we prevent it from happening? If many software developers are contributing to your CDK code, such cross-stack reference may slip past code review and become a problem.
 
 In the article below I will find answers to these questions:
-- How to enforce that there are no cross stack references in the code?
+- How to enforce that there are no cross-stack references in the code?
 - What is the CDK Constructs Tree and how it is related to the problem?
 - Can we solve the problem with CDK Aspects?
 - Can we solve the problem with CDK native validation mechanism?
@@ -62,7 +62,7 @@ We see that at the top we have an App object, which children are some stacks whi
 
 It is a hierarchical structure - a tree with nodes. The stacks are children (nodes) of the App. Stacks have also children. Some of them are regular constructs, but we see also the `CDKMetadata`, `Exports`, `BootstrapVersion` and `CheckBootstrapVersion` nodes. These 4 nodes have predefined names and each has a specific purpose. Within `Exports` node the stack exports are stored.
 
-Expanding the `Exports` section we see our `CfnOutput` construct. It was added because the 2nd stack, `StackImportingBucket`, is importing it  in the code (explicit cross stack reference).
+Expanding the `Exports` section we see our `CfnOutput` construct. It was added because the 2nd stack, `StackImportingBucket`, is importing it  in the code (explicit cross-stack reference).
 
 ```json
           "Exports": {
@@ -198,7 +198,7 @@ Successfully synthesized to /home/bernard/projects/cdk_prevent_cfn_output/src/cd
 Supply a stack id (StackWithBucketExport, StackImportingBucket) to display its template.
 ```
 
-As seen, sadly the `Exports` tree node is not visited. It seems that the Aspects are only run against explicitly created `CDK Constructs`. Please remember that the `Exports` section in construct tree is created implicitly by CDK due to the explicit cross stack reference.
+As seen, sadly the `Exports` tree node is not visited. It seems that the Aspects are only run against explicitly created `CDK Constructs`. Please remember that the `Exports` section in construct tree is created implicitly by CDK due to the explicit cross-stack reference.
 
 Hence `CDK Aspects` can not help us.
 
@@ -293,7 +293,15 @@ jsii.errors.JavaScriptError:
 
 ## Summary
 
+This article explored how to prevent unwanted cross-stack dependencies in `AWS CDK` applications, specifically by blocking the use of `CloudFormation Outputs` section that enable such dependencies. While AWS CDK and `CloudFormation` best practices often recommend cross-stack references, they can introduce maintenance challenges, especially in large or multi-developer environments.
 
+We examined the `CDK Construct Tree` and demonstrated that cross-stack references result in implicit Exports sections in the generated templates. Attempts to use `CDK Aspects` to block these references proved ineffective, as `Aspects` only visit explicitly created constructs, not implicitly generated nodes like Exports.
+
+The solution is to leverage `CDK`'s native validation mechanism by implementing a custom `IValidation` class. This validator inspects the construct tree for the presence of an `Exports` node and fails the synthesis process if found, effectively enforcing the policy of no cross-stack outputs.
+
+By integrating this validation into your stacks, you can ensure that cross-stack references are caught early in the development process, improving the maintainability of your CDK applications. This comparison also shows that there are things that can be done / verified with native validation mechanism, but not with `CDK Aspects`.
+
+Have a great day.
 
 
 
