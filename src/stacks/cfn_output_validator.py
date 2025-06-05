@@ -3,6 +3,7 @@ import typing as t
 import aws_cdk as cdk
 import jsii
 from constructs import IConstruct, IValidation
+from loguru import logger
 
 _STACK_CFN_OUTPUT_SECTION: t.Final[str] = "Exports"
 
@@ -25,7 +26,7 @@ class StackValidator:
 
     def validate_cfn_output(self, stack_child_construct: IConstruct) -> list[str]:
         errors: list[str] = []
-        print(
+        logger.info(
             f"Validating construct {stack_child_construct.node.id} in stack {self.stack.node.id}"
         )
         if stack_child_construct.node.id == _STACK_CFN_OUTPUT_SECTION:

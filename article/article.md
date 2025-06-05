@@ -48,6 +48,42 @@ In the article below I will find answers to these questions:
 - Can we solve the problem with CDK Aspects?
 - Can we solve the problem with CDK native validation mechanism?
 
+
+## CDK Constructs tree
+
+The CDK construct tree is described [here](https://docs.aws.amazon.com/cdk/v2/guide/apps.html#apps-tree)
+
+`cdk synth` produces a.o. the **tree.json** file which is a physical representation of the tree:
+
+![tree.json](images/tree_json.png)
+
+
+
+It is a hierarchical structure - a tree with nodes. The stacks are children (nodes) of the App. Stacks have also children. Some of them are regular constructs, but we see also the `CDKMetadata`, `Exports`, `BootstrapVersion` and `CheckBootstrapVersion` nodes. These 4 nodes have predefined names and each has a dedicated role. Within `Exports` the stack exports are stored.
+
+Expanding the `Exports` section we see our `CfnOutput` construct. It was added because the 2nd stack, `StackImportingBucket`, is importing it  in the code (explicit cross stack reference).
+
+```json
+          "Exports": {
+            "id": "Exports",
+            "path": "StackWithBucketExport/Exports",
+            "children": {
+              "Output{\"Ref\":\"MyFirstBucketB8884501\"}": {
+                "id": "Output{\"Ref\":\"MyFirstBucketB8884501\"}",
+                "path": "StackWithBucketExport/Exports/Output{\"Ref\":\"MyFirstBucketB8884501\"}",
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.CfnOutput",
+                  "version": "2.133.0"
+                }
+              }
+            },
+            "constructInfo": {
+              "fqn": "constructs.Construct",
+              "version": "10.4.2"
+            }
+          }
+```
+
 ## CDK Aspects to the rescue - or not?
 
 Our sample CDK app is available [here](https://github.com/BernardOrzechowski/cdk_prevent_cfn_output/blob/develop/src/app.py)
@@ -107,41 +143,63 @@ Its a simple CDK app with 2 stacks, where the 2nd one imports an S3 Bucket creat
 
 Currently the command `cdk synth` works. Lets see if we can prevent it.
 
-## CDK Constructs tree
 
-The CDK construct tree is described [here](https://docs.aws.amazon.com/cdk/v2/guide/apps.html#apps-tree)
+Lets add an `Aspect` that will check for the existence of `cdk.CfnOutput` resource. We will also print the node id to check which stack resources were actually visited.
 
-`cdk synth` produces a.o. the **tree.json** file which is a physical representation of the tree:
+```python
+import aws_cdk as cdk
+import jsii
+from constructs import IConstruct
+from loguru import logger
 
-![tree.json](images/tree_json.png)
 
+@jsii.implements(cdk.IAspect)
+class CfnOutputAspect:
+    """Aspect to validate that no CFN Outputs are created in the stack."""
 
-
-It is a hierarchical structure - a tree with nodes. The stacks are children (nodes) of the App. Stacks have also children. Some of them are regular constructs, but we see also the `CDKMetadata`, `Exports`, `BootstrapVersion` and `CheckBootstrapVersion` nodes. These 4 nodes have predefined names and each has a dedicated role. Within `Exports` the stack exports are stored.
-
-Expanding the `Exports` section we see our `CfnOutput` construct. It was added because the 2nd stack, `StackImportingBucket`, is importing it  in the code (explicit cross stack reference).
-
-```json
-          "Exports": {
-            "id": "Exports",
-            "path": "StackWithBucketExport/Exports",
-            "children": {
-              "Output{\"Ref\":\"MyFirstBucketB8884501\"}": {
-                "id": "Output{\"Ref\":\"MyFirstBucketB8884501\"}",
-                "path": "StackWithBucketExport/Exports/Output{\"Ref\":\"MyFirstBucketB8884501\"}",
-                "constructInfo": {
-                  "fqn": "aws-cdk-lib.CfnOutput",
-                  "version": "2.133.0"
-                }
-              }
-            },
-            "constructInfo": {
-              "fqn": "constructs.Construct",
-              "version": "10.4.2"
-            }
-          }
+    def visit(self, node: IConstruct):
+        logger.info(f"Visiting node {node.node.id}")
+        if isinstance(node, cdk.CfnOutput):
+            cdk.Annotations.of(node).add_error(
+                '"CFN Output is not allowed in this stack."'
+            )
 ```
 
+
+And lets add it to the stacks:
+
+```python
+import aws_cdk as cdk
+import aws_cdk.aws_s3 as s3
+
+from stacks.cfn_output_aspect import CfnOutputAspect
+
+
+class StackWithBucketExport(cdk.Stack):
+    def __init__(self, scope: cdk.App, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        self.bucket = s3.Bucket(self, "MyFirstBucket", versioned=True)
+
+        cdk.Aspects.of(self).add(CfnOutputAspect())
+```
+
+Lets check the output of `cdk synth`
+
+```bash
+2025-06-05 17:34:18.687 | INFO     | stacks.cfn_output_aspect:visit:12 - Visiting node StackWithBucketExport
+2025-06-05 17:34:18.690 | INFO     | stacks.cfn_output_aspect:visit:12 - Visiting node MyFirstBucket
+2025-06-05 17:34:18.692 | INFO     | stacks.cfn_output_aspect:visit:12 - Visiting node Resource
+2025-06-05 17:34:18.695 | INFO     | stacks.cfn_output_aspect:visit:12 - Visiting node StackImportingBucket
+2025-06-05 17:34:18.697 | INFO     | stacks.cfn_output_aspect:visit:12 - Visiting node MyFirstBucket
+2025-06-05 17:34:18.699 | INFO     | stacks.cfn_output_aspect:visit:12 - Visiting node Resource
+Successfully synthesized to /home/bernard/projects/cdk_prevent_cfn_output/src/cdk.out
+Supply a stack id (StackWithBucketExport, StackImportingBucket) to display its template.
+```
+
+As seen, sadly the `Exports` tree node is not visited. It seems that the Aspects are only run against explicitly created `CDK Constructs`. Please remember that the `Exports` section in construct tree is created implicitly by CDK due to the explicit cross stack reference.
+
+Hence `CDK Aspects` can not help us.
 
 ## CDK Native validation mechanism
 
