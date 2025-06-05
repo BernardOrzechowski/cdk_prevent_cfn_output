@@ -113,9 +113,11 @@ The CDK construct tree is described [here](https://docs.aws.amazon.com/cdk/v2/gu
 
 `cdk synth` produces a.o. the **tree.json** file which is a physical representation of the tree:
 
-[tree.json](images/tree_json.png)
+![tree.json](images/tree_json.png)
 
-It is a hierarchical structure. The stacks are children of the App. Stacks have also children. Some of them are regular constructs, but we see also the `CDKMetadata`, `Exports`, `BootstrapVersion` and `CheckBootstrapVersion`.
+
+
+It is a hierarchical structure. The stacks are children of the App. Stacks have also children. Some of them are regular constructs, but we see also the `CDKMetadata`, `Exports`, `BootstrapVersion` and `CheckBootstrapVersion`. These 4 objects have predefined names and each has a dedicated role. Within `Exports` the stack exports are stored.
 
 Expanding the `Exports` section we see our `CfnOutput` construct. It was added because the 2nd stack, `StackImportingBucket`, is importing it  in the code (explicit cross stack reference).
 
