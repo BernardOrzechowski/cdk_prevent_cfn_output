@@ -117,7 +117,7 @@ The CDK construct tree is described [here](https://docs.aws.amazon.com/cdk/v2/gu
 
 
 
-It is a hierarchical structure. The stacks are children of the App. Stacks have also children. Some of them are regular constructs, but we see also the `CDKMetadata`, `Exports`, `BootstrapVersion` and `CheckBootstrapVersion`. These 4 objects have predefined names and each has a dedicated role. Within `Exports` the stack exports are stored.
+It is a hierarchical structure - a tree with nodes. The stacks are children (nodes) of the App. Stacks have also children. Some of them are regular constructs, but we see also the `CDKMetadata`, `Exports`, `BootstrapVersion` and `CheckBootstrapVersion` nodes. These 4 nodes have predefined names and each has a dedicated role. Within `Exports` the stack exports are stored.
 
 Expanding the `Exports` section we see our `CfnOutput` construct. It was added because the 2nd stack, `StackImportingBucket`, is importing it  in the code (explicit cross stack reference).
 
@@ -190,7 +190,7 @@ class StackValidator:
 
 ```
 
-When we execute `cdk synth` the error we wanted to see is produced. `cdk synth` failed, exactly what we wanted to achieve:
+When we execute `cdk synth` the error we wanted to see is produced. `cdk synth` failed with the message `CFN Output is not allowed in this stack`:
 
 
 ```python
