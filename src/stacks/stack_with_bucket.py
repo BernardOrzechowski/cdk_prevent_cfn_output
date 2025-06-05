@@ -1,7 +1,8 @@
 import aws_cdk as cdk
 import aws_cdk.aws_s3 as s3
 
-from stacks.cfn_output_aspect import CfnOutputAspect
+# from stacks.cfn_output_aspect import CfnOutputAspect
+from stacks.cfn_output_validator import StackValidator
 
 
 class StackWithBucketExport(cdk.Stack):
@@ -10,4 +11,5 @@ class StackWithBucketExport(cdk.Stack):
 
         self.bucket = s3.Bucket(self, "MyFirstBucket", versioned=True)
 
-        cdk.Aspects.of(self).add(CfnOutputAspect())
+        # cdk.Aspects.of(self).add(CfnOutputAspect())
+        self.node.add_validation(StackValidator(stack=self))

@@ -216,6 +216,7 @@ import typing as t
 import aws_cdk as cdk
 import jsii
 from constructs import IConstruct, IValidation
+from loguru import logger
 
 _STACK_CFN_OUTPUT_SECTION: t.Final[str] = "Exports"
 
@@ -238,7 +239,7 @@ class StackValidator:
 
     def validate_cfn_output(self, stack_child_construct: IConstruct) -> list[str]:
         errors: list[str] = []
-        print(
+        logger.info(
             f"Validating construct {stack_child_construct.node.id} in stack {self.stack.node.id}"
         )
         if stack_child_construct.node.id == _STACK_CFN_OUTPUT_SECTION:
@@ -248,23 +249,44 @@ class StackValidator:
 
 ```
 
+For clarity, in each stack I will add this mechanism and comment out the `Aspect` based solution:
+
+```python
+import aws_cdk as cdk
+import aws_cdk.aws_s3 as s3
+
+# from stacks.cfn_output_aspect import CfnOutputAspect
+from stacks.cfn_output_validator import StackValidator
+
+
+class StackWithBucketExport(cdk.Stack):
+    def __init__(self, scope: cdk.App, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        self.bucket = s3.Bucket(self, "MyFirstBucket", versioned=True)
+
+        # cdk.Aspects.of(self).add(CfnOutputAspect())
+        self.node.add_validation(StackValidator(stack=self)) # native CDK validation
+```
+
+
 When we execute `cdk synth` the error we wanted to see is produced. `cdk synth` failed with the message `CFN Output is not allowed in this stack`:
 
 
 ```python
-Validating construct MyFirstBucket in stack StackWithBucketExport
-Validating construct CDKMetadata in stack StackWithBucketExport
-Validating construct Exports in stack StackWithBucketExport
-Validating construct MyFirstBucket in stack StackImportingBucket
-Validating construct CDKMetadata in stack StackImportingBucket
+2025-06-05 17:57:39.612 | INFO     | stacks.cfn_output_validator:validate_cfn_output:29 - Validating construct MyFirstBucket in stack StackWithBucketExport
+2025-06-05 17:57:39.617 | INFO     | stacks.cfn_output_validator:validate_cfn_output:29 - Validating construct CDKMetadata in stack StackWithBucketExport
+2025-06-05 17:57:39.621 | INFO     | stacks.cfn_output_validator:validate_cfn_output:29 - Validating construct Exports in stack StackWithBucketExport
+2025-06-05 17:57:39.628 | INFO     | stacks.cfn_output_validator:validate_cfn_output:29 - Validating construct MyFirstBucket in stack StackImportingBucket
+2025-06-05 17:57:39.633 | INFO     | stacks.cfn_output_validator:validate_cfn_output:29 - Validating construct CDKMetadata in stack StackImportingBucket
 jsii.errors.JavaScriptError: 
   @jsii/kernel.RuntimeError: Error: Validation failed with the following errors:
     [StackWithBucketExport] CFN Output is not allowed in this stack.
-      at Kernel._Kernel_ensureSync (/tmp/tmpq91vo52y/lib/program.js:927:23)
-      at Kernel.invoke (/tmp/tmpq91vo52y/lib/program.js:294:102)
-      at KernelHost.processRequest (/tmp/tmpq91vo52y/lib/program.js:15467:36)
-      at KernelHost.run (/tmp/tmpq91vo52y/lib/program.js:15427:22)
-      at Immediate._onImmediate (/tmp/tmpq91vo52y/lib/program.js:15428:46)
+      at Kernel._Kernel_ensureSync (/tmp/tmp3phy3gsw/lib/program.js:927:23)
+      at Kernel.invoke (/tmp/tmp3phy3gsw/lib/program.js:294:102)
+      at KernelHost.processRequest (/tmp/tmp3phy3gsw/lib/program.js:15467:36)
+      at KernelHost.run (/tmp/tmp3phy3gsw/lib/program.js:15427:22)
+      at Immediate._onImmediate (/tmp/tmp3phy3gsw/lib/program.js:15428:46)
       at process.processImmediate (node:internal/timers:476:21)
 ```
 
