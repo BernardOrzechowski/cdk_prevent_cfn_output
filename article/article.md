@@ -109,13 +109,43 @@ Currently the command `cdk synth` works. Lets see if we can prevent it.
 
 ## CDK Constructs tree
 
-https://docs.aws.amazon.com/cdk/v2/guide/apps.html#apps-tree
+The CDK construct tree is described [here](https://docs.aws.amazon.com/cdk/v2/guide/apps.html#apps-tree)
+
+`cdk synth` produces a.o. the **tree.json** file which is a physical representation of the tree:
+
+[tree.json](images/tree_json.png)
+
+It is a hierarchical structure. The stacks are children of the App. Stacks have also children. Some of them are regular constructs, but we see also the `CDKMetadata`, `Exports`, `BootstrapVersion` and `CheckBootstrapVersion`.
+
+Expanding the `Exports` section we see our `CfnOutput` construct. It was added because the 2nd stack, `StackImportingBucket`, is importing it  in the code (explicit cross stack reference).
+
+```json
+          "Exports": {
+            "id": "Exports",
+            "path": "StackWithBucketExport/Exports",
+            "children": {
+              "Output{\"Ref\":\"MyFirstBucketB8884501\"}": {
+                "id": "Output{\"Ref\":\"MyFirstBucketB8884501\"}",
+                "path": "StackWithBucketExport/Exports/Output{\"Ref\":\"MyFirstBucketB8884501\"}",
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.CfnOutput",
+                  "version": "2.133.0"
+                }
+              }
+            },
+            "constructInfo": {
+              "fqn": "constructs.Construct",
+              "version": "10.4.2"
+            }
+          }
+```
+
 
 ## CDK Native validation mechanism
 
 Now lets try the [CDK Construct IValidation](https://docs.aws.amazon.com/cdk/api/v2/python/constructs/IValidation.html) method. 
 
-We will create a `StackValidator` class that implements the `IValidation` protocol. After the section [CDK Constructs tree](#cdk-constructs-tree) we know that we are looking for the stack node child with ID "Exports".
+We will create a `StackValidator` class that implements the `IValidation` protocol. After the section [CDK Constructs tree](#cdk-constructs-tree) we know that we are looking for the stack node child with ID **"Exports"**.
 
 The code below ([github repo link](https://github.com/BernardOrzechowski/cdk_prevent_cfn_output/blob/develop/src/stacks/cfn_output_validator.py)) checks for the existence of such a child node.
 
