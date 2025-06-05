@@ -35,9 +35,9 @@ What we want to avoid is that such an object in generated Cloud Formation templa
  },
 ```
 
-Why? Because:
+**Why?**
 - as soon as it will be imported in other stack it will become a problem
-- it introduces the anti pattern of using cross-stack dependencies instead of relying on AWS SSM Parameters.
+- it introduces the anti pattern of using cross-stack dependencies instead of relying on `AWS SSM Parameters`.
 
 
 **The question is**: Can we prevent it from happening? If many software developers are contributing to your CDK code, such cross-stack reference may slip past code review and become a problem.
@@ -49,11 +49,11 @@ In the article below I will find answers to these questions:
 - Can we solve the problem with `CDK native validation mechanism`?
 
 
-## CDK Constructs tree
+## CDK Constructs Tree
 
 The CDK constructs tree is described [here](https://docs.aws.amazon.com/cdk/v2/guide/apps.html#apps-tree)
 
-`cdk synth` produces among others the **tree.json** file in `cdk.out` directory which is a physical representation of the CDK constructs tree:
+`cdk synth` produces among others the **tree.json** file in `cdk.out` directory which is a physical representation of the `CDK Constructs Tree`:
 
 ![tree.json](images/tree_json.png)
 
