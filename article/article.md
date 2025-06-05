@@ -53,7 +53,7 @@ In the article below I will find answers to these questions:
 
 The CDK construct tree is described [here](https://docs.aws.amazon.com/cdk/v2/guide/apps.html#apps-tree)
 
-`cdk synth` produces a.o. the **tree.json** file which is a physical representation of the tree:
+`cdk synth` produces among others the **tree.json** file in `cdk.out` directory which is a physical representation of the CDK constructs tree:
 
 ![tree.json](images/tree_json.png)
 
