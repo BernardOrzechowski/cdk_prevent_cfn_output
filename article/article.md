@@ -142,7 +142,7 @@ Its a simple CDK app with 2 stacks, where the 2nd one imports an S3 Bucket creat
 ...
 ```
 
-Currently the command `cdk synth` works. Lets see if we can prevent it. Our goal it that `cdk synth` will fail whenever there is an `Exports` section.
+Currently the command `cdk synth` works. Let's see if we can prevent it. Our goal it that `cdk synth` will fail whenever there is an `Exports` section.
 
 
 Let's add an `Aspect` that will check for the existence of `cdk.CfnOutput` resource. We will also print the node id to check which stack resources were actually visited.
@@ -293,9 +293,9 @@ jsii.errors.JavaScriptError:
 
 ## Summary
 
-This article explored how to prevent unwanted cross-stack dependencies in `AWS CDK` applications, specifically by blocking the use of `CloudFormation Outputs` section that enable such dependencies. While AWS CDK and `CloudFormation` best practices often recommend cross-stack references, they can introduce maintenance challenges, especially in large or multi-developer environments.
+This article explored how to prevent unwanted cross-stack dependencies in `AWS CDK` applications, specifically by blocking the use of `CloudFormation Outputs` section that enable such dependencies. While `AWS CDK` and `CloudFormation` best practices often recommend cross-stack references, they can introduce maintenance challenges, especially in large or multi-developer environments.
 
-We examined the `CDK Construct Tree` and demonstrated that cross-stack references result in implicit Exports sections in the generated templates. Attempts to use `CDK Aspects` to block these references proved ineffective, as `Aspects` only visit explicitly created constructs, not implicitly generated nodes like Exports.
+We examined the `CDK Construct Tree` and demonstrated that cross-stack references result in implicit Exports sections in the generated templates. Attempts to use `CDK Aspects` to block these references proved ineffective, as `Aspects` only visit explicitly created constructs, not implicitly generated nodes like `Exports`.
 
 The solution is to leverage `CDK`'s native validation mechanism by implementing a custom `IValidation` class. This validator inspects the construct tree for the presence of an `Exports` node and fails the synthesis process if found, effectively enforcing the policy of no cross-stack outputs.
 
