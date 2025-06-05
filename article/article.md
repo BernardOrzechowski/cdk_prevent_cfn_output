@@ -1,5 +1,5 @@
 
-# How to prevent cross-stack dependencies in CDK Applications?
+# How to prevent cross-stack dependencies in AWS CDK Applications?
 
 AWS CDK has a set of [best practices](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/best-practices.html) that serve as a guide to efficient use of CDK. There is also a set of [best practices](https://docs.aws.amazon.com/cdk/v2/guide/best-practices.html) for Cloud Formation. As your CDK code will always end up as a set of Cloud Formation templates you need to consider both for optimal setup. 
 
