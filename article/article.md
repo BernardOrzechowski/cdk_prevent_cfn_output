@@ -44,9 +44,9 @@ Why? Because:
 
 In the article below I will find answers to these questions:
 - How to enforce that there are no cross-stack references in the code?
-- What is the CDK Constructs Tree and how it is related to the problem?
-- Can we solve the problem with CDK Aspects?
-- Can we solve the problem with CDK native validation mechanism?
+- What is the `CDK Constructs Tree` and how it is related to the problem?
+- Can we solve the problem with `CDK Aspects`?
+- Can we solve the problem with `CDK native validation mechanism`?
 
 
 ## CDK Constructs tree
