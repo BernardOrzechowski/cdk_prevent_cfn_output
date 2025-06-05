@@ -60,7 +60,7 @@ The CDK constructs tree is described [here](https://docs.aws.amazon.com/cdk/v2/g
 We see that at the top we have an App object, which children are some stacks which in turn have some other children (tree nodes).
 
 
-It is a hierarchical structure - a tree with nodes. The stacks are children (nodes) of the App. Stacks have also children. Some of them are regular constructs, but we see also the `CDKMetadata`, `Exports`, `BootstrapVersion` and `CheckBootstrapVersion` nodes. These 4 nodes have predefined names and each has a dedicated role. Within `Exports` the stack exports are stored.
+It is a hierarchical structure - a tree with nodes. The stacks are children (nodes) of the App. Stacks have also children. Some of them are regular constructs, but we see also the `CDKMetadata`, `Exports`, `BootstrapVersion` and `CheckBootstrapVersion` nodes. These 4 nodes have predefined names and each has a specific purpose. Within `Exports` node the stack exports are stored.
 
 Expanding the `Exports` section we see our `CfnOutput` construct. It was added because the 2nd stack, `StackImportingBucket`, is importing it  in the code (explicit cross stack reference).
 
@@ -120,7 +120,7 @@ stack_importing_bucket = StackImportingBucket(
 app.synth()
 ```
 
-Its a simple CDK app with 2 stacks, where the 2nd one imports an S3 Bucket created by the first stack. It has the consequence that in cdk.out directory after running `cdk synth` we see that the 1st stack created an Output object and the 2nd stack is importing it (details in this [article](https://medium.com/qoob-dev/cdk-cloud-formation-do-not-follow-blindly-all-best-practices-c529464c8e9d)):
+Its a simple CDK app with 2 stacks, where the 2nd one imports an S3 Bucket created by the 1st stack. It has the consequence that in `cdk.out` directory after running `cdk synth` we see that the 1st stack created an Output object and the 2nd stack is importing it (details on this mechanism in this [article](https://medium.com/qoob-dev/cdk-cloud-formation-do-not-follow-blindly-all-best-practices-c529464c8e9d)):
 
 
 
@@ -142,10 +142,10 @@ Its a simple CDK app with 2 stacks, where the 2nd one imports an S3 Bucket creat
 ...
 ```
 
-Currently the command `cdk synth` works. Lets see if we can prevent it.
+Currently the command `cdk synth` works. Lets see if we can prevent it. Our goal it that `cdk synth` will fail whenever there is an `Exports` section.
 
 
-Lets add an `Aspect` that will check for the existence of `cdk.CfnOutput` resource. We will also print the node id to check which stack resources were actually visited.
+Let's add an `Aspect` that will check for the existence of `cdk.CfnOutput` resource. We will also print the node id to check which stack resources were actually visited.
 
 ```python
 import aws_cdk as cdk
@@ -167,7 +167,7 @@ class CfnOutputAspect:
 ```
 
 
-And lets add it to the stacks:
+And let's add it to the stacks:
 
 ```python
 import aws_cdk as cdk
@@ -185,7 +185,7 @@ class StackWithBucketExport(cdk.Stack):
         cdk.Aspects.of(self).add(CfnOutputAspect())
 ```
 
-Lets check the output of `cdk synth`
+Let's check the output of `cdk synth`
 
 ```bash
 2025-06-05 17:34:18.687 | INFO     | stacks.cfn_output_aspect:visit:12 - Visiting node StackWithBucketExport
@@ -204,7 +204,7 @@ Hence `CDK Aspects` can not help us.
 
 ## CDK Native validation mechanism
 
-Now lets try the [CDK Construct IValidation](https://docs.aws.amazon.com/cdk/api/v2/python/constructs/IValidation.html) method. 
+Now let's try the [CDK Construct IValidation](https://docs.aws.amazon.com/cdk/api/v2/python/constructs/IValidation.html) method. 
 
 We will create a `StackValidator` class that implements the `IValidation` protocol. After the section [CDK Constructs tree](#cdk-constructs-tree) we know that we are looking for the stack node child with ID **"Exports"**.
 
@@ -271,7 +271,7 @@ class StackWithBucketExport(cdk.Stack):
 ```
 
 
-When we execute `cdk synth` the error we wanted to see is produced. `cdk synth` failed with the message `CFN Output is not allowed in this stack`:
+When we execute `cdk synth` the error we wanted to see is produced. `cdk synth` fails with the message `CFN Output is not allowed in this stack`:
 
 
 ```python
